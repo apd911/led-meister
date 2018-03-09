@@ -36,11 +36,14 @@ class LEDMeister(Frame):
 			arduino.write(struct.pack('>BBBB', 2,2,0,0))
 			time.sleep(.1)
 			arduino.flush()
-		def fire():
-			arduino.write(struct.pack('>BBBB', 2,0,0,0))
-			time.sleep(.1)
+		def fire1():
 			arduino.write(struct.pack('>BBBB', 2,3,0,0))
 			time.sleep(.1)
+			arduino.flush()
+		def fire2():
+			arduino.write(struct.pack('>BBBB', 2,7,0,0))
+			time.sleep(.1)
+			arduino.flush()
 		def lava():
 			arduino.write(struct.pack('>BBBB', 2,5,0,0))
 			time.sleep(.1)
@@ -120,14 +123,14 @@ class LEDMeister(Frame):
 		bwbutton = Button(self, text="B&W", command=baw)
 		bwbutton.grid(row=1, column=1)
 
-		firebutton = Button(self, text="Fire", command=fire)
+		firebutton = Button(self, text="Fire 1", command=fire1)
 		firebutton.grid(row=1, column=2)
 
-		lavabutton = Button(self, text="Lava", command=lava)
-		lavabutton.grid(row=1, column=3)
+		fire2button = Button(self, text="Fire 2", command=fire2)
+		fire2button.grid(row=1, column=3)
 
-		forbutton = Button(self, text="Forest", command=forest)
-		forbutton.grid(row=2, column=0)
+		lavabutton = Button(self, text="Lava", command=lava)
+		lavabutton.grid(row=2, column=0)
 
 		oceanbutton = Button(self, text="Ocean", command=ocean)
 		oceanbutton.grid(row=2, column=1)
@@ -135,11 +138,14 @@ class LEDMeister(Frame):
 		polbutton = Button(self,text="Police", command=police)
 		polbutton.grid(row=2, column=2)
 
-		parbutton = Button(self,text="Party", command=party)
-		parbutton.grid(row=2, column=3)
+		forbutton = Button(self, text="Forest", command=forest)
+		forbutton.grid(row=2, column=3)
 
-		colbutton = Button(self, text="Solid color", command=customColor)
+		colbutton = Button(self,text="Party", command=party)
 		colbutton.grid(row=3, column=0)
+
+		parbutton = Button(self, text="Solid color", command=customColor)
+		parbutton.grid(row=3, column=1)
 
 		brightslider = Scale(self, from_=0, to=127, orient=HORIZONTAL, label="Brightness", showvalue=0, sliderlength=20, length=230, width=10)
 		brightslider.set(bright)
