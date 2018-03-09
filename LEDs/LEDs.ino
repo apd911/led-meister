@@ -8,7 +8,7 @@
 #define SPARKING 120
 #define COOLING  55
 
-bool gReverseDirection = false;
+bool gReverseDirection = true; // Invert direction of fire
 
 int redc = EEPROM.read(11);
 int greenc = EEPROM.read(13);
@@ -16,7 +16,7 @@ int bluec = EEPROM.read(15);
 
 long c[4];
  
-struct CRGB leds[NUM_LEDS];
+CRGB leds[NUM_LEDS];
 
 int UPDATES_PER_SECOND = EEPROM.read(8);
 
@@ -35,7 +35,6 @@ void setup() {
  
   FastLED.addLeds<LED_TYPE, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS).setCorrection( TypicalLEDStrip );
   FastLED.setBrightness(255);
-  FastLED.clear();  
 }
  
 void loop() {
@@ -110,14 +109,21 @@ void loop() {
     }
     
   }
-  ChangePalette();
-  static uint8_t startIndex = 0;
+  if (paletteCounter == 3){
+    Fire();
+    FastLED.show();
+    FastLED.delay(1000 / UPDATES_PER_SECOND); 
+  }
+  else {
+    ChangePalette();
+    static uint8_t startIndex = 0;
 
-  startIndex = startIndex + 1;
+    startIndex = startIndex + 1;
    
-  FillLEDsFromPaletteColors(startIndex);
-  FastLED.show();
-  FastLED.delay(800 / UPDATES_PER_SECOND);  
+    FillLEDsFromPaletteColors(startIndex);
+    FastLED.show();
+    FastLED.delay(800 / UPDATES_PER_SECOND); 
+  }
 }
 
 void fillSolid(uint32_t colour) {      
@@ -142,7 +148,6 @@ void ChangePalette()
 {   
     if( paletteCounter == 1)  { currentPalette = RainbowColors_p;         currentBlending = LINEARBLEND;}
     if( paletteCounter == 2)  { SetupBlackAndWhiteStripedPalette();       currentBlending = LINEARBLEND;}
-    if( paletteCounter == 3)  { Fire2012();                               currentBlending = LINEARBLEND;}
     if( paletteCounter == 4)  { currentPalette = OceanColors_p;           currentBlending = LINEARBLEND;}
     if( paletteCounter == 5)  { currentPalette = LavaColors_p;            currentBlending = LINEARBLEND;}
     if( paletteCounter == 6)  { currentPalette = ForestColors_p;          currentBlending = LINEARBLEND;}
@@ -201,33 +206,33 @@ void SetupPolicePalette()
   currentPalette[31] = CRGB::Black;
 }
 
-void Fire2012()
+void Fire()
 {
   static byte heat[NUM_LEDS];
 
-    for( int i = 0; i < NUM_LEDS; i++) {
-      heat[i] = qsub8( heat[i],  random8(0, ((COOLING * 10) / NUM_LEDS) + 2));
-    }
+  for( int i = 0; i < NUM_LEDS; i++) {
+    heat[i] = qsub8( heat[i],  random8(0, ((COOLING * 10) / NUM_LEDS) + 2));
+  }
   
-    for( int k= NUM_LEDS - 1; k >= 2; k--) {
-      heat[k] = (heat[k - 1] + heat[k - 2] + heat[k - 2] ) / 3;
-    }
+  for( int k= NUM_LEDS - 1; k >= 2; k--) {
+    heat[k] = (heat[k - 1] + heat[k - 2] + heat[k - 2] ) / 3;
+  }
     
-    if( random8() < SPARKING ) {
-      int y = random8(7);
-      heat[y] = qadd8( heat[y], random8(160,255) );
-    }
+  if( random8() < SPARKING ) {
+    int y = random8(7);
+    heat[y] = qadd8( heat[y], random8(160,255) );
+  }
 
-    for( int j = 0; j < NUM_LEDS; j++) {
-      CRGB color = HeatColor( heat[j]);
-      int pixelnumber;
-      if( gReverseDirection ) {
-        pixelnumber = (NUM_LEDS-1) - j;
-      } else {
-        pixelnumber = j;
-      }
-      leds[pixelnumber] = color;
+  for( int j = 0; j < NUM_LEDS; j++) {
+    CRGB color = HeatColor( heat[j]);
+    int pixelnumber;
+    if( gReverseDirection ) {
+      pixelnumber = (NUM_LEDS-1) - j;
+    } else {
+      pixelnumber = j;
     }
+    leds[pixelnumber] = color;
+  }
 }
 
 void Black()

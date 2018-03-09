@@ -37,9 +37,10 @@ class LEDMeister(Frame):
 			time.sleep(.1)
 			arduino.flush()
 		def fire():
+			arduino.write(struct.pack('>BBBB', 2,0,0,0))
+			time.sleep(.1)
 			arduino.write(struct.pack('>BBBB', 2,3,0,0))
 			time.sleep(.1)
-			arduino.flush()
 		def lava():
 			arduino.write(struct.pack('>BBBB', 2,5,0,0))
 			time.sleep(.1)
