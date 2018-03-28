@@ -6,13 +6,26 @@ import time
 import os
 import sys
 import struct
+import serial.tools.list_ports
 
-from tkinter import Tk, Text, W, E, N, S, LEFT, RIGHT, BOTH, HORIZONTAL, Scale
+from tkinter import Tk, Text, W, E, N, S, LEFT, RIGHT, BOTH, HORIZONTAL, Scale, Menu, Label
 from tkinter.ttk import Frame, Button, Style
 from tkinter.colorchooser import *
 
+fileR = open('settings.txt', 'r')
+
+ports = list(serial.tools.list_ports.comports())
+if fileR.readline(3) != 'COM':
+	com = ports[0][0]
+else:
+	com = 'COM' + fileR.readline()
+
+fileR.close()
+arduino = serial.Serial(com, 9600)
+
 clear = lambda: os.system('cls')
-arduino = serial.Serial('COM3', 9600)
+
+port = []
 
 pal = "N/A"
 bright = 0
@@ -22,6 +35,7 @@ i = True
 clear()
 
 class LEDMeister(Frame):
+	
 	def __init__(self):
 		super().__init__()
 
@@ -91,21 +105,64 @@ class LEDMeister(Frame):
 			arduino.write(struct.pack('>BBBB', 1,3,0,0))
 			time.sleep(.1)
 			arduino.flush()
+		def makeFunc(x):
+			return lambda: self.openPort(x)
+
+		pal = 0
+		bright = 0
+		speed = 0
 
 		arduino.write(struct.pack('>BBBB', 9,1,0,0))
-		got = arduino.readline()[:-2].decode('utf-8').split()
-		pal = got[0]
-		bright = got[1]
-		speed = got[2]
-		direction = got[3]
-		print(pal)
-		print(bright)
-		print(speed)
-		print(direction)
-		time.sleep(.1)
+		arduino.timeout = 5
+		print(com)
+		try:
+			got = arduino.readline()[:-2].decode('utf-8').split()
+			if got[4] == 'arduino':
+				connected = True
+				pal = got[0]
+				bright = got[1]
+				speed = got[2]
+				print(pal)
+				print(bright)
+				print(speed)
+				time.sleep(.1)
+			else:
+				connected = False
+				print('Not connected to an LED strip')
+		except:
+			connected = False
+		
 		arduino.flush()
 
+		if connected == True:
+			status = com + ' - ' + got[5]
+		else:
+			status = "Not connected to an LED strip"
+
+		t = 0
+
 		self.master.title("LED Meister")
+
+		menubar = Menu(self.master)
+		self.master.config(menu=menubar)
+
+		fileMenu = Menu(menubar)
+		fileMenu.add_command(label="Save settings", command=savesettings)
+		fileMenu.add_command(label="Save & exit", command=self.onSaveExit)
+		fileMenu.add_command(label="Exit", command=self.onExit)
+		menubar.add_cascade(label="File", menu=fileMenu)
+
+		optionsMenu = Menu(menubar)
+		optionsMenu.add_command(label="Invert rotation", command=invertrotation)
+		menubar.add_cascade(label="Options", menu=optionsMenu)
+
+		portsMenu = Menu(menubar)
+		for p in ports:
+			port.append(str(p[0]))
+			print(port)
+			portsMenu.add_command(label=p, command=makeFunc(port[t]))
+			t = t + 1
+		menubar.add_cascade(label="Ports", menu=portsMenu)
 
 		self.columnconfigure(0, pad=3)
 		self.columnconfigure(1, pad=3)
@@ -158,23 +215,46 @@ class LEDMeister(Frame):
 		speedslider.set(speed)
 		speedslider.grid(row=5, column=0, columnspan=3)
 
-		setspeedbut = Button(self,text="Set", command=setspeed)
+		setspeedbut = Button(self, text="Set", command=setspeed)
 		setspeedbut.grid(row=5, column=3)
 
-		invertbutton = Button(self, text="Invert rot.", command=invertrotation)
-		invertbutton.grid(row=6, column=0)
-
-		savebutton = Button(self, text="Save settings", command=savesettings)
-		savebutton.grid(row=7, column=2)
-
-		quitbutton = Button(self, text="Quit", command=self.quit)
-		quitbutton.grid(row=7, column=3)
+		porttext = Label(self, text=status)
+		porttext.grid(row=6, column=0, columnspan=4)
 
 		self.pack()
 
+	def openPort(self, portselected):
+		fileW = open('settings.txt', 'w')
+		fileW.write(portselected)
+		fileW.close()
+		os.execl(sys.executable, sys.executable, *sys.argv)
+
+	def onSaveExit(self):
+		arduino.write(struct.pack('>BBBB', 3,0,0,0))
+		time.sleep(.1)
+		arduino.flush()
+		time.sleep(0.5)
+		arduino.setDTR(False)
+		time.sleep(0.022)
+		arduino.setDTR(True)
+		self.quit()
+
+
+	def onExit(self):
+		arduino.setDTR(False)
+		time.sleep(0.022)
+		arduino.setDTR(True)
+		self.quit()
+
 def main():
+	def closeEvent():
+		arduino.setDTR(False)
+		time.sleep(0.022)
+		arduino.setDTR(True)
+		quit()
 	root = Tk()
 	app = LEDMeister()
+	root.protocol("WM_DELETE_WINDOW", closeEvent)
 	root.mainloop()
 
 if __name__ == '__main__':

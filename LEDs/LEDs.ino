@@ -1,14 +1,12 @@
 #include <FastLED.h>
 #include <EEPROM.h>
- 
-#define LED_PIN 5
+
+#define LED_PIN 4
 #define NUM_LEDS 95
 #define LED_TYPE    WS2812B
 #define COLOR_ORDER GRB
 #define SPARKING 120
 #define COOLING  55
-
-bool gReverseDirection = false; // Invert direction of fire
 
 int redc = EEPROM.read(11);
 int greenc = EEPROM.read(13);
@@ -27,6 +25,9 @@ TBlendType    currentBlending;
 int paletteCounter = EEPROM.read(5);
 int brightnessCounter = EEPROM.read(6);
 int dir = EEPROM.read(10);
+
+String type = "arduino";
+String id = "MainStrip";
  
 void setup() {
 
@@ -46,7 +47,7 @@ void loop() {
     }
     Serial.flush();
     if (c[0] == 9 && c[1] == 1) {
-      Serial.println(String(paletteCounter) + ' ' + String(brightnessCounter) + ' ' + String(UPDATES_PER_SECOND) + ' ' + String(dir));
+      Serial.println(String(paletteCounter) + ' ' + String(brightnessCounter) + ' ' + String(UPDATES_PER_SECOND) + ' ' + String(dir) + ' ' + String(type) + ' ' + String(id));
     }
     else if (c[0] == 1 && c[1] == 2) {
       brightnessCounter=c[2];
@@ -111,14 +112,14 @@ void loop() {
     
   }
   if (paletteCounter == 3){
-    Fire2012_halfStrip();
-    mirror2ndHalf();
+    fire1();
+    fire2();
 
     FastLED.show();
     FastLED.delay(1000 / UPDATES_PER_SECOND); 
   }
   else if (paletteCounter == 7){
-    Fire();
+    fire();
 
     FastLED.show();
     FastLED.delay(1000 / UPDATES_PER_SECOND); 
@@ -214,7 +215,7 @@ void SetupPolicePalette()
   currentPalette[31] = CRGB::Black;
 }
 
-void Fire()
+void fire()
 {
   static byte heat[NUM_LEDS];
 
@@ -243,7 +244,7 @@ void Fire()
   }
 }
 
-void Fire2012_halfStrip() {
+void fire1() {
   
   static byte heat[NUM_LEDS/2];
 
@@ -266,7 +267,7 @@ void Fire2012_halfStrip() {
   }
 }
 
-void mirror2ndHalf() {
+void fire2() {
 
   if ( dir == 1 ) {
     for (uint8_t i=0; i<NUM_LEDS/2; i++) {
